@@ -1,4 +1,4 @@
-﻿import { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useScroll, useMotionValueEvent, motion, useTransform } from 'framer-motion';
 import { platforms } from './data/platforms';
 import Navigation from './components/Navigation';
@@ -50,11 +50,8 @@ function App() {
 
       {/* Navigation */}
       <Navigation
-        platforms={platforms}
         activeIndex={activeIndex}
-        onTabClick={handleTabClick}
-        scrollProgress={0}
-        scrollProgressMV={scrollYProgress}
+        onNavigate={handleTabClick}
       />
 
       {/* Viewport sections fixed in place, driven by window scroll */}
