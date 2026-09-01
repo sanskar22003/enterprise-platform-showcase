@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useScroll, useMotionValueEvent, motion, useTransform } from 'framer-motion';
 import { platforms } from './data/platforms';
 import Navigation from './components/Navigation';
@@ -6,9 +6,10 @@ import PlatformSection from './components/PlatformSection';
 
 function App() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Standard window scroll driver
-  const { scrollYProgress } = useScroll();
+  // Track scroll of our specific container
+  const { scrollYProgress } = useScroll({ container: containerRef });
 
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
     const idx = Math.min(Math.floor(v * platforms.length), platforms.length - 1);
@@ -19,9 +20,10 @@ function App() {
   const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0, 0.25]);
 
   const handleTabClick = useCallback((index: number) => {
-    const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
-    const targetScroll = (index / platforms.length) * totalScroll;
-    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    if (!containerRef.current) return;
+    const totalScroll = containerRef.current.scrollHeight - containerRef.current.clientHeight;
+    const targetScroll = (index / (platforms.length - 1)) * totalScroll;
+    containerRef.current.scrollTo({ top: targetScroll, behavior: 'smooth' });
   }, []);
 
   return (
@@ -54,25 +56,19 @@ function App() {
         onNavigate={handleTabClick}
       />
 
-      {/* Viewport sections fixed in place, driven by window scroll */}
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+      {/* Viewport sections in normal document flow for native scroll performance */}
+      <div ref={containerRef} className="relative z-10 w-full scroll-snap-container bg-[#050a14]">
         {platforms.map((platform, i) => (
-          <PlatformSection
-            key={platform.id}
-            platform={platform}
-            index={i}
-            totalSections={platforms.length}
-            scrollYProgress={scrollYProgress}
-          />
+          <div key={platform.id} className="scroll-snap-section h-screen w-full">
+            <PlatformSection
+              platform={platform}
+              index={i}
+              totalSections={platforms.length}
+              scrollYProgress={scrollYProgress}
+            />
+          </div>
         ))}
       </div>
-
-      {/* Window scroll spacer */}
-      <div
-        className="relative w-full pointer-events-none"
-        style={{ height: `${platforms.length * 100}vh` }}
-        aria-hidden="true"
-      />
     </>
   );
 }

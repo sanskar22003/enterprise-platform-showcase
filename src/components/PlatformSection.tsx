@@ -1,5 +1,5 @@
-import { Suspense } from 'react';
-import { motion, useTransform, MotionValue } from 'framer-motion';
+import { Suspense, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import type { Platform } from '@/data/platforms';
 import * as LucideIcons from 'lucide-react';
@@ -9,46 +9,13 @@ interface PlatformSectionProps {
   platform: Platform;
   index: number;
   totalSections: number;
-  scrollYProgress: MotionValue<number>;
+  scrollYProgress?: any; // kept for compatibility if passed, but ignored
 }
 
-export default function PlatformSection({ platform, index, totalSections, scrollYProgress }: PlatformSectionProps) {
-  const N = totalSections;
-  const isFirst = index === 0;
-  const isLast = index === N - 1;
-
-  // Each section owns a strict non-overlapping slice [p0 → p3] of scrollYProgress [0,1].
-  // A short fade zone at the entry/exit edges keeps transitions smooth.
-  const p0 = index / N;
-  const p3 = (index + 1) / N;
-  const fade = 0.08; // 8% of each section's slice dedicated to fade-in / fade-out
-  const p1 = p0 + fade;  // end of fade-in
-  const p2 = p3 - fade;  // start of fade-out
-
-  // Opacity: first section starts at 1 (already visible), last section ends at 1 (stays visible)
-  const opacityIn: number[] = isFirst ? [p0, p2, p3]     : [p0, p1, p2, p3];
-  const opacityOut: number[] = isFirst ? [1, 1, 0]         : isLast ? [0, 1, 1] : [0, 1, 1, 0];
-
-  // Y parallax: first section already settled (starts at 0), others enter from below
-  const yIn: number[] = isFirst ? [p0, p3]     : [p0, p1, p2, p3];
-  const yOut: number[] = isFirst ? [0, -50]    : isLast ? [50, 0, 0, 0] : [50, 0, 0, -50];
-
-  // Scale: same idea — no entry squeeze for first section
-  const scaleIn: number[] = isFirst ? [p0, p2, p3]     : [p0, p1, p2, p3];
-  const scaleOut: number[] = isFirst ? [1, 1, 0.96]     : isLast ? [0.96, 1, 1] : [0.96, 1, 1, 0.96];
-
-  const opacity = useTransform(scrollYProgress, opacityIn, opacityOut);
-  const y = useTransform(scrollYProgress, yIn, yOut);
-  const scale = useTransform(scrollYProgress, scaleIn, scaleOut);
-  const visualY = useTransform(scrollYProgress, yIn, yOut.map(v => v * 1.4));
-  const visualScale = useTransform(scrollYProgress, scaleIn, scaleOut.map(v => v === 1 ? 1 : v - 0.04));
-
-  const pointerEvents = useTransform(scrollYProgress, (v) => {
-    const currentIdx = Math.min(Math.floor(v * N), N - 1);
-    return currentIdx === index ? 'auto' : 'none';
-  });
-
+export default function PlatformSection({ platform, index }: PlatformSectionProps) {
   const contentLeft = platform.contentSide === 'left';
+  const sectionRef = useRef<HTMLElement>(null);
+  const isInView = useInView(sectionRef, { margin: '200px 0px', once: false });
 
   const renderIcon = (iconName: string) => {
     const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>>)[iconName];
@@ -57,20 +24,21 @@ export default function PlatformSection({ platform, index, totalSections, scroll
   };
 
   const VisualComponent = (Visuals as any)[platform.visual];
-  const visual = VisualComponent ? (
-    <Suspense fallback={<div className="w-full h-full min-h-[400px]" />}>
+  const visual = (VisualComponent && isInView) ? (
+    <Suspense fallback={<div className="w-full h-full min-h-[300px]" />}>
       <VisualComponent />
     </Suspense>
   ) : null;
 
   return (
-    <motion.section
+    <section
+      ref={sectionRef}
       id={platform.id}
-      className="absolute inset-0 w-full flex items-center overflow-hidden"
-      style={{ background: platform.colors.bgGradient, backgroundColor: platform.colors.bg, pointerEvents, opacity }}
+      className="relative w-full h-full min-h-screen flex items-center overflow-hidden"
+      style={{ background: platform.colors.bgGradient, backgroundColor: platform.colors.bg }}
     >
       {/* Grid pattern overlay */}
-      <div className="absolute inset-0 grid-pattern opacity-40" />
+      <div className="absolute inset-0 grid-pattern opacity-40 pointer-events-none" />
 
       {/* Accent glow blobs */}
       <motion.div
@@ -91,19 +59,21 @@ export default function PlatformSection({ platform, index, totalSections, scroll
       />
 
       {/* Section number watermark */}
-      <motion.div
-        style={{ opacity: useTransform(scrollYProgress, [0, 0.5, 1], [0, 0.04, 0]) }}
-        className="absolute -right-10 top-1/2 -translate-y-1/2 text-[280px] font-black text-white pointer-events-none select-none leading-none"
+      <div
+        className="absolute -right-10 top-1/2 -translate-y-1/2 text-[20vw] lg:text-[280px] font-black text-white/5 pointer-events-none select-none leading-none"
       >
         {platform.number}
-      </motion.div>
+      </div>
 
-      <div className="relative z-10 max-w-[1400px] mx-auto w-full px-6 lg:px-10 py-20 lg:py-24">
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center ${contentLeft ? '' : 'lg:[direction:rtl]'}`}>
+      <div className="relative z-10 max-w-[1400px] mx-auto w-full px-6 lg:px-10 py-16 lg:py-24 h-full flex flex-col justify-center">
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center w-full ${contentLeft ? '' : 'lg:[direction:rtl]'}`}>
           {/* Content */}
           <motion.div
-            style={{ scale, y }}
-            className={`flex flex-col gap-6 lg:[direction:ltr] ${contentLeft ? 'lg:order-1' : 'lg:order-2'}`}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            className={`flex flex-col gap-5 lg:gap-6 lg:[direction:ltr] ${contentLeft ? 'lg:order-1' : 'lg:order-2'}`}
           >
             {/* Eyebrow */}
             <div className="flex items-center gap-3">
@@ -114,7 +84,6 @@ export default function PlatformSection({ platform, index, totalSections, scroll
                 Platform {platform.number}
               </span>
               <div className="h-px flex-1 max-w-[60px]" style={{ background: `linear-gradient(90deg, ${platform.colors.accent}40, transparent)` }} />
-              <span className="text-xs font-mono text-white/30">{index + 1} / 6</span>
             </div>
 
             {/* Title */}
@@ -167,7 +136,7 @@ export default function PlatformSection({ platform, index, totalSections, scroll
             {/* CTA */}
             <a
               href={platform.url}
-              className="group inline-flex items-center gap-2 mt-4 px-5 py-3 rounded-full text-sm font-medium text-white transition-all duration-300 self-start animated-border focus-ring"
+              className="group inline-flex items-center gap-2 mt-2 lg:mt-4 px-5 py-3 rounded-full text-sm font-medium text-white transition-all duration-300 self-start animated-border focus-ring"
               style={{ ['--accent-color' as string]: platform.colors.accent }}
             >
               <span>Explore Platform</span>
@@ -177,8 +146,11 @@ export default function PlatformSection({ platform, index, totalSections, scroll
 
           {/* Visual */}
           <motion.div
-            style={{ scale: visualScale, y: visualY }}
-            className={`flex items-center justify-center min-h-[400px] lg:min-h-[560px] lg:[direction:ltr] ${contentLeft ? 'lg:order-2' : 'lg:order-1'}`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            className={`flex items-center justify-center w-full h-[30vh] min-h-[250px] lg:h-[50vh] lg:min-h-[400px] lg:[direction:ltr] ${contentLeft ? 'lg:order-2' : 'lg:order-1'}`}
           >
             {visual}
           </motion.div>
@@ -191,12 +163,12 @@ export default function PlatformSection({ platform, index, totalSections, scroll
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30"
+          className="absolute bottom-6 lg:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30"
         >
           <span className="text-[10px] font-mono tracking-widest uppercase">Scroll</span>
           <ChevronDown className="w-4 h-4 animate-bounce" />
         </motion.div>
       )}
-    </motion.section>
+    </section>
   );
 }
