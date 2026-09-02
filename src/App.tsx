@@ -1,75 +1,55 @@
-import { useState, useCallback, useRef } from 'react';
-import { useScroll, useMotionValueEvent, motion, useTransform } from 'framer-motion';
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { platforms } from './data/platforms';
 import Navigation from './components/Navigation';
-import PlatformSection from './components/PlatformSection';
+import Sidebar from './components/Sidebar';
+import MainContent from './components/MainContent';
+import RightPanel from './components/RightPanel';
+import StatusBar from './components/StatusBar';
 
 function App() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Track scroll of our specific container
-  const { scrollYProgress } = useScroll({ container: containerRef });
-
-  useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    const idx = Math.min(Math.floor(v * platforms.length), platforms.length - 1);
-    setActiveIndex(Math.max(0, idx));
-  });
-
-  // Darken overlay as user scrolls down
-  const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0, 0.25]);
-
-  const handleTabClick = useCallback((index: number) => {
-    if (!containerRef.current) return;
-    const totalScroll = containerRef.current.scrollHeight - containerRef.current.clientHeight;
-    const targetScroll = (index / (platforms.length - 1)) * totalScroll;
-    containerRef.current.scrollTo({ top: targetScroll, behavior: 'smooth' });
-  }, []);
+  const platform = platforms[activeIndex];
 
   return (
-    <>
-      {/* Fixed dark background wall */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: '#050d1f', zIndex: 0 }} />
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#050a14]">
+      {/* Grain overlay */}
+      <div className="noise-overlay" />
 
-      {/* Subtle grain texture overlay */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '180px',
-          mixBlendMode: 'overlay',
-          opacity: 0.55,
-          zIndex: 1,
-        }}
-      />
+      {/* Ambient platform glow — transitions with platform */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={platform.id + '-bg'}
+          className="fixed inset-0 pointer-events-none z-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.7 }}
+          style={{
+            background:
+              'radial-gradient(ellipse 55% 55% at 72% 48%, ' +
+              platform.colors.glow +
+              ' 0%, transparent 70%)',
+          }}
+        />
+      </AnimatePresence>
 
-      {/* Darkening depth overlay */}
-      <motion.div
-        className="fixed inset-0 pointer-events-none"
-        style={{ background: '#000', opacity: overlayOpacity, zIndex: 2 }}
-      />
+      {/* Top Navigation */}
+      <Navigation activeIndex={activeIndex} onNavigate={setActiveIndex} />
 
-      {/* Navigation */}
-      <Navigation
-        activeIndex={activeIndex}
-        onNavigate={handleTabClick}
-      />
+      {/* Body — sidebar + content + right panel */}
+      <div className="relative z-10 flex flex-1 overflow-hidden">
+        <Sidebar activeIndex={activeIndex} onNavigate={setActiveIndex} />
 
-      {/* Viewport sections in normal document flow for native scroll performance */}
-      <div ref={containerRef} className="relative z-10 w-full scroll-snap-container bg-[#050a14]">
-        {platforms.map((platform, i) => (
-          <div key={platform.id} className="scroll-snap-section h-screen w-full">
-            <PlatformSection
-              platform={platform}
-              index={i}
-              totalSections={platforms.length}
-              scrollYProgress={scrollYProgress}
-            />
-          </div>
-        ))}
+        <div className="flex flex-1 overflow-hidden divide-x divide-white/[0.05]">
+          <MainContent platform={platform} />
+          <RightPanel platform={platform} />
+        </div>
       </div>
-    </>
+
+      {/* Status bar */}
+      <StatusBar platform={platform} />
+    </div>
   );
 }
 
