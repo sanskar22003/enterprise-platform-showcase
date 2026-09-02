@@ -7,3 +7,14 @@ export const platformConfig = [
   { id: 'platform-5', name: 'Augmented Reality', number: '05', path: '/platform/augmented-reality' },
   { id: 'platform-6', name: 'Virtual Reality', number: '06', path: '/platform/virtual-reality' },
 ];
+
+// Global configuration for site content
+export const siteConfig = {
+  mainTitle: 'USLTDP 2.0 Digital Twin Solution Portal',
+  footerText: 'Digital Twin Eco System',
+  // Simple configurable texts. Remove or add items as needed.
+  footerItems: [
+    'Live Connectivity: Optimal',
+    'System Status: Secure'
+  ]
+};

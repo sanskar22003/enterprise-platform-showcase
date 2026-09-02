@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { platformConfig } from '../config/platforms';
+import { platformConfig, siteConfig } from '../config/platforms';
 import type { Theme } from '../App';
 import { cn } from '@/lib/utils';
 
@@ -13,29 +13,27 @@ export default function LeftPanel({ theme }: Props) {
   const accent = '#0ea5e9';
 
   return (
-    <div className='flex flex-col gap-8'>
+    <div className='flex flex-col gap-10 mt-[-40px]'>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className='flex flex-col gap-3'
+        className='flex flex-col gap-4'
       >
-        <span className={cn('text-[12px] font-mono tracking-[0.25em] uppercase font-semibold', isDark ? 'text-white/40' : 'text-black/40')}>
-          USLTDP 2.0
-        </span>
-        <h1 className={cn('text-[36px] font-extrabold leading-[1.1] tracking-tight', isDark ? 'text-white' : 'text-gray-900')}>
-          O&M Digital Twin
+        <h1 className={cn(
+          'text-[42px] font-extrabold leading-[1.1] tracking-tight',
+          'bg-clip-text text-transparent bg-gradient-to-r',
+          isDark ? 'from-white via-sky-100 to-sky-400' : 'from-gray-900 via-sky-700 to-sky-500'
+        )}>
+          {siteConfig.mainTitle}
         </h1>
-        <p className={cn('text-[16px] leading-relaxed max-w-[400px]', isDark ? 'text-white/60' : 'text-black/60')}>
-          Real-time Operations & Maintenance for Offshore Assets
-        </p>
         <div
-          className='mt-2 h-[2px] w-16 rounded-full'
-          style={{ background: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)' }}
+          className='mt-1 h-[3px] w-20 rounded-full'
+          style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }}
         />
       </motion.div>
 
-      <div className='grid grid-cols-2 gap-3 max-w-[600px]'>
+      <div className='grid grid-cols-2 gap-4 max-w-[600px]'>
         {platformConfig.map((p, i) => (
           <Link
             key={p.id}
@@ -46,14 +44,14 @@ export default function LeftPanel({ theme }: Props) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.05, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              whileHover={{ y: -2, scale: 1.01 }}
+              whileHover={{ y: -2, scale: 1.02 }}
               className={cn(
                 'group relative flex items-center justify-between gap-3 px-4 py-4 rounded-2xl',
-                'border transition-all duration-300 cursor-pointer overflow-hidden',
+                'border transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-sm',
               )}
               style={{
                 borderColor: isDark ? accent + '25' : accent + '40',
-                background: isDark ? accent + '0a' : accent + '10',
+                background: isDark ? accent + '08' : accent + '10',
               }}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLElement;

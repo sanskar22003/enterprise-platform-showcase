@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { Theme } from '../App';
 import { GlobeCdn } from './ui/cobe-globe-cdn';
-import { cn } from '../lib/utils';
 
 interface Props { theme: Theme; }
 
@@ -39,30 +37,15 @@ const ARCS = [
 ];
 
 export default function OilGlobe({ theme }: Props) {
-  const [hovered, setHovered] = useState(false);
-  const isDark = theme === 'dark';
-
   return (
-    <div
-      className='w-full h-full flex items-center justify-end relative right-[-15%] xl:right-[-25%] overflow-visible group'
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div className='w-full h-full flex items-center justify-end relative right-[-15%] xl:right-[-25%] overflow-visible group'>
       <GlobeCdn
         className='w-[900px] h-[900px] xl:w-[1100px] xl:h-[1100px] max-w-none max-h-none flex-shrink-0 transition-transform duration-700'
         markers={OIL_FIELDS.map(f => ({ id: f.id, location: [f.lat, f.lng], region: f.name }))}
         arcs={ARCS.map(a => ({ id: a.id, from: a.from as [number, number], to: a.to as [number, number] }))}
-        isDark={isDark}
+        isDark={theme === 'dark'}
         speed={0.002}
       />
-      {/* Minimalist Hover Hint */}
-      <div className={cn(
-        'absolute bottom-16 right-16 px-4 py-2 rounded-full text-[11px] font-mono tracking-widest pointer-events-none transition-all duration-500',
-        isDark ? 'bg-white/5 text-white/50 border border-white/10' : 'bg-black/5 text-black/50 border border-black/10',
-        hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-      )}>
-        [ SCROLL TO ZOOM IN/OUT ]
-      </div>
     </div>
   );
 }

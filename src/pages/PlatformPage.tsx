@@ -23,7 +23,7 @@ export default function PlatformPage({ theme }: Props) {
 
   return (
     <div className={cn(
-      'min-h-screen flex flex-col items-center py-16 px-6 relative transition-colors duration-700 overflow-y-auto',
+      'h-full w-full flex flex-col items-center pt-[100px] pb-[80px] px-6 relative transition-colors duration-700 overflow-y-auto',
       isDark ? 'bg-[#07101e] text-white' : 'bg-[#f8fafc] text-black'
     )}>
       <DotPattern
