@@ -1,54 +1,55 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { platforms } from './data/platforms';
-import Navigation from './components/Navigation';
-import Sidebar from './components/Sidebar';
-import MainContent from './components/MainContent';
-import RightPanel from './components/RightPanel';
-import StatusBar from './components/StatusBar';
+import Header from './components/Header';
+import LeftPanel from './components/LeftPanel';
+import OilGlobe from './components/OilGlobe';
+import { DotPattern } from './components/ui/DotPattern';
+import { cn } from './lib/utils';
+
+export type Theme = 'dark' | 'light';
 
 function App() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const platform = platforms[activeIndex];
+  const [theme, setTheme] = useState<Theme>('dark');
+  const isDark = theme === 'dark';
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#050a14]">
-      {/* Grain overlay */}
-      <div className="noise-overlay" />
+    <div
+      className={cn(
+        'fixed inset-0 flex flex-col overflow-hidden transition-colors duration-700',
+        isDark ? 'bg-[#07101e]' : 'bg-[#f8fafc]',
+      )}
+    >
+      {/* MagicUI Dot Pattern background */}
+      <DotPattern
+        width={24}
+        height={24}
+        cx={1}
+        cy={1}
+        cr={1}
+        className={cn(
+          'transition-colors duration-700',
+          isDark ? 'fill-white/[0.04]' : 'fill-black/[0.06]',
+        )}
+      />
 
-      {/* Ambient platform glow — transitions with platform */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={platform.id + '-bg'}
-          className="fixed inset-0 pointer-events-none z-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
-          style={{
-            background:
-              'radial-gradient(ellipse 55% 55% at 72% 48%, ' +
-              platform.colors.glow +
-              ' 0%, transparent 70%)',
-          }}
-        />
-      </AnimatePresence>
+      {/* Header */}
+      <Header theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
 
-      {/* Top Navigation */}
-      <Navigation activeIndex={activeIndex} onNavigate={setActiveIndex} />
+      {/* Body: left panel + globe */}
+      <div className='relative flex-1 flex overflow-hidden'>
 
-      {/* Body — sidebar + content + right panel */}
-      <div className="relative z-10 flex flex-1 overflow-hidden">
-        <Sidebar activeIndex={activeIndex} onNavigate={setActiveIndex} />
+        {/* Left panel — title + 6 buttons, always on top */}
+        <div className='relative z-20 flex-shrink-0 w-1/2 flex flex-col justify-center pl-16 pr-8 pointer-events-none'>
+          {/* We make wrapper pointer-events-none so globe can be interacted through it if it overflows */}
+          <div className='pointer-events-auto'>
+            <LeftPanel theme={theme} />
+          </div>
+        </div>
 
-        <div className="flex flex-1 overflow-hidden divide-x divide-white/[0.05]">
-          <MainContent platform={platform} />
-          <RightPanel platform={platform} />
+        {/* Globe — absolute, fills entire screen, positioned to right (via pl-[20%] inside OilGlobe) */}
+        <div className='absolute inset-0 z-10 overflow-hidden'>
+          <OilGlobe theme={theme} />
         </div>
       </div>
-
-      {/* Status bar */}
-      <StatusBar platform={platform} />
     </div>
   );
 }
