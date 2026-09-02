@@ -98,7 +98,7 @@ export function GlobeCdn({
       const width = canvas.offsetWidth
       if (width === 0 || globe) return
 
-      const arcColor = isDark ? [1, 1, 1] : [0, 0, 0];
+      const arcColor: [number, number, number] = isDark ? [1, 1, 1] : [0, 0, 0];
 
       globe = createGlobe(canvas, {
         devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
